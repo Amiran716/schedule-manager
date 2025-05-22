@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Редактирование расписания</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+    <!-- Кнопка для перехода на страницу "Меню управления объектами" -->
+    <a href="/object-menu" class="btn btn-warning text-white">
+        <i class="bi bi-gear-fill"></i> Управление
+    </a>
+
+    <h2 class="text-center mb-4">Редактирование расписания</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header">Курсы</div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a th:each="c : ${#numbers.sequence(1,6)}"
+                       th:href="@{/schedule-editor/schedule(course=${c}, week=${week}, day=${day})}"
+                       th:classappend="${course == c} ? 'btn btn-primary active' : 'btn btn-outline-primary'"
+                       th:text="'Курс ' + ${c}"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header">Дни недели</div>
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <a th:each="d, i : ${ {'Пн','Вт','Ср','Чт','Пт','Сб'} }"
+                       th:href="@{/schedule-editor/schedule(course=${course}, week=${week}, day=${i.index})}"
+                       th:classappend="${day == i.index} ? 'btn btn-primary active' : 'btn btn-outline-primary'"
+                       th:text="${d}"></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header">Неделя</div>
+                <div class="card-body d-flex gap-2">
+                    <a th:href="@{/schedule-editor/schedule(course=${course}, week=0, day=${day})}"
+                       th:classappend="${week == 0} ? 'btn btn-primary active' : 'btn btn-outline-primary'">Чётная</a>
+                    <a th:href="@{/schedule-editor/schedule(course=${course}, week=1, day=${day})}"
+                       th:classappend="${week == 1} ? 'btn btn-primary active' : 'btn btn-outline-primary'">Нечётная</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${table.groups.isEmpty()}" class="alert alert-warning text-center">
+        Нет учебных групп для отображения.
+    </div>
+
+    <div th:if="${!table.groups.isEmpty()}" class="card">
+        <div class="card-header">Таблица расписания</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle text-center mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">№</th>
+                        <th th:each="g : ${table.groups}" th:text="${g.name}"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="lessonNumber : ${#numbers.sequence(0,7)}">
+                        <td th:text="${lessonNumber + 1} + ' пара'"></td>
+                        <td th:each="g : ${table.groups}">
+                            <div th:with="cell=${table.cellsByLessonAndGroup[__${lessonNumber}__][__${g.id}__]}"
+                                 class="p-2"
+                                 th:classappend="${cell.empty} ? 'bg-light text-muted' : ''">
+                                <a th:if="${cell.empty}"
+                                   class="btn btn-sm btn-outline-success w-100"
+                                   th:href="@{/schedule/add(groupId=${cell.groupId},lessonNumber=${cell.lessonNumber},day=${cell.day},week=${cell.week},course=${course})}">
+                                    Назначить занятие
+                                </a>
+                                <a th:if="${!cell.empty}"
+                                   class="btn btn-sm btn-outline-info w-100 text-start text-wrap"
+                                   th:href="@{/schedule/edit(id=${cell.scheduleId},course=${course},week=${cell.week},day=${cell.day})}">
+                                    <div><strong th:text="${cell.discipline}"></strong></div>
+                                    <div th:text="${cell.type}"></div>
+                                    <div th:text="${cell.room}"></div>
+                                    <div th:text="${cell.teacher}"></div>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

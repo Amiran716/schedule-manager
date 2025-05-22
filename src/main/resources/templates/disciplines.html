@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Управление дисциплинами</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- TomSelect CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <!-- TomSelect JS -->
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-4">
+
+  <!-- Назад в меню -->
+  <div class="mb-3">
+    <a href="/object-menu" class="btn btn-secondary">&larr; Назад в меню</a>
+  </div>
+
+  <h2 class="mb-4 text-center">Управление дисциплинами</h2>
+
+  <div class="row">
+    <!-- Левая колонка: формы -->
+    <div class="col-md-5">
+      <!-- Форма добавления -->
+      <div class="card mb-4">
+        <div class="card-header">Добавить дисциплину</div>
+        <div class="card-body">
+          <form th:action="@{/disciplines/add}" method="post">
+            <div class="mb-3">
+              <label for="name" class="form-label">Название дисциплины</label>
+              <input type="text" class="form-control" id="name" name="name"
+                     placeholder="Введите название дисциплины" required>
+            </div>
+            <button type="submit" class="btn btn-success">Добавить</button>
+          </form>
+          <div th:if="${errorMessage}" class="alert alert-danger mt-3" th:text="${errorMessage}"></div>
+          <div th:if="${successMessage}" class="alert alert-success mt-3" th:text="${successMessage}"></div>
+        </div>
+      </div>
+
+      <!-- Форма удаления -->
+      <div class="card">
+        <div class="card-header">Удалить дисциплину</div>
+        <div class="card-body">
+          <form th:action="@{/disciplines/delete}" method="post">
+            <div class="mb-3">
+              <label for="disciplineToDelete" class="form-label">Выберите дисциплину</label>
+              <select class="form-select" id="disciplineToDelete" name="disciplineId" required>
+                <option value="">Начните вводить название дисциплины</option>
+                <option th:each="d : ${disciplines}"
+                        th:value="${d.id}"
+                        th:text="${d.name}"
+                        th:attr="data-search=${d.name}"></option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-danger">Удалить</button>
+          </form>
+          <div th:if="${successMessageDelete}" class="alert alert-success mt-3"
+               th:text="${successMessageDelete}"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Правая колонка: таблица -->
+    <div class="col-md-7">
+      <div class="card">
+        <div class="card-header">Список дисциплин</div>
+        <div class="card-body">
+          <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+              <th>Название</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${disciplines}">
+              <td th:text="${d.name}"></td>
+            </tr>
+            </tbody>
+          </table>
+          <div th:if="${#lists.isEmpty(disciplines)}" class="text-muted">Нет добавленных дисциплин</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация TomSelect
+    new TomSelect('#disciplineToDelete', {
+      placeholder: 'Начните вводить название дисциплины',
+      noResultsText: 'Ничего не найдено',
+      searchPattern: '^${input}',
+      render: {
+        option: function(data, escape) {
+          return '<div>' + escape(data.text) + '</div>';
+        }
+      },
+      onInitialize: function() {
+        this.control.classList.add('form-select');
+      }
+    });
+
+    // Исправленное подтверждение удаления
+    document.querySelector('form[action="/disciplines/delete"]')
+      .addEventListener('submit', function(e) {
+        if (!confirm('Внимание!\nПри удалении дисциплины все связанные с ней занятия будут также удалены из расписания.')) {
+          e.preventDefault();
+        }
+      });
+  });
+</script>
+
+</body>
+</html>

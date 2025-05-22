@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${isEdit} ? 'Редактирование занятия' : 'Назначение занятия'"></title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-4">
+  <a th:href="@{/schedule-editor/schedule(course=${scheduleAdd.course}, week=${scheduleAdd.week}, day=${scheduleAdd.day})}"
+     class="btn btn-secondary">&larr; Назад</a>
+
+  <h2 class="mb-4 text-center" th:text="${isEdit} ? 'Редактирование занятия' : 'Назначение занятия'"></h2>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <p><strong>Группа:</strong>
+            <span th:text="${groupName} ?: 'Неизвестная группа'"></span>
+          </p>
+          <p><strong>День:</strong>
+            <span th:text="${dayNames[scheduleAdd.day]} ?: 'Неизвестный день'"></span>
+          </p>
+        </div>
+        <div class="col-md-6">
+          <p><strong>Неделя:</strong>
+            <span th:text="${scheduleAdd.week == 0 ? 'Чётная' : 'Нечётная'}"></span>
+          </p>
+          <p><strong>Пара:</strong>
+            <span th:text="${scheduleAdd.lessonNumber + 1}"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Данные занятия</div>
+    <div class="card-body">
+      <form th:action="@{${isEdit} ? '/schedule/edit' : '/schedule/add'}" method="post">
+        <!-- Изменяем способ передачи скрытых полей -->
+        <input type="hidden" name="id" th:if="${isEdit}" th:value="${scheduleAdd.scheduleId}">
+        <input type="hidden" name="groupId" th:value="${scheduleAdd.groupId}">
+        <input type="hidden" name="lessonNumber" th:value="${scheduleAdd.lessonNumber}">
+        <input type="hidden" name="day" th:value="${scheduleAdd.day}">
+        <input type="hidden" name="week" th:value="${scheduleAdd.week}">
+        <input type="hidden" name="course" th:value="${scheduleAdd.course}">
+
+        <div class="mb-3">
+          <label for="discipline" class="form-label">Дисциплина</label>
+          <select class="form-select" id="discipline" name="disciplineId" th:value="${scheduleAdd.disciplineId}" required>
+            <option value="">Выберите дисциплину</option>
+            <option th:each="d : ${disciplines}"
+                    th:value="${d.id}"
+                    th:text="${d.name}"
+                    th:selected="${d.id == scheduleAdd.disciplineId}"></option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="type" class="form-label">Тип занятия</label>
+          <select class="form-select" id="type" name="type" th:value="${scheduleAdd.type}" required>
+            <option value="">Выберите тип</option>
+            <option value="Лекция" th:selected="${scheduleAdd.type == 'Лекция'}">Лекция</option>
+            <option value="Лабораторная" th:selected="${scheduleAdd.type == 'Лабораторная'}">Лабораторная</option>
+            <option value="Практика" th:selected="${scheduleAdd.type == 'Практика'}">Практика</option>
+            <option value="Семинар" th:selected="${scheduleAdd.type == 'Семинар'}">Семинар</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="teacher" class="form-label">Преподаватель</label>
+          <select class="form-select" id="teacher" name="teacherId" th:value="${scheduleAdd.teacherId}" required>
+            <option value="">Выберите преподавателя</option>
+            <option th:each="t : ${teachers}"
+                    th:value="${t.id}"
+                    th:text="${t.name}"
+                    th:selected="${t.id == scheduleAdd.teacherId}"></option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="room" class="form-label">Аудитория</label>
+          <select class="form-select" id="room" name="roomId" th:value="${scheduleAdd.roomId}" required>
+            <option value="">Выберите аудиторию</option>
+            <option th:each="r : ${rooms}"
+                    th:value="${r.id}"
+                    th:text="${r.name}"
+                    th:selected="${r.id == scheduleAdd.roomId}"></option>
+          </select>
+        </div>
+
+        <div class="mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="combined" name="combined" th:checked="${scheduleAdd.combined}">
+          <label class="form-check-label" for="combined">Совмещённое занятие</label>
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <button type="submit" class="btn btn-success">ОК</button>
+          <div>
+            <button type="button" class="btn btn-secondary me-2" onclick="confirmCancel()">Отмена</button>
+            <button th:if="${isEdit}"
+                    type="button"
+                    class="btn btn-danger"
+                    onclick="confirmDelete()">Удалить</button>
+          </div>
+        </div>
+      </form>
+
+      <div th:if="${errorMessage}" class="alert alert-danger mt-3" th:text="${errorMessage}"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      // Инициализация TomSelect с предвыбранными значениями
+      const initTomSelect = (id) => {
+          new TomSelect(`#${id}`, {
+              placeholder: 'Начните вводить',
+              persist: false
+          });
+      };
+
+      initTomSelect('discipline');
+      initTomSelect('teacher');
+      initTomSelect('room');
+
+      // Валидация формы
+      document.querySelector('form').addEventListener('submit', function(e) {
+          let isValid = true;
+          ['discipline', 'type', 'teacher', 'room'].forEach(id => {
+              const el = document.getElementById(id);
+              if (!el.value) {
+                  el.classList.add('is-invalid');
+                  isValid = false;
+              } else {
+                  el.classList.remove('is-invalid');
+              }
+          });
+
+          if (!isValid) {
+              e.preventDefault();
+              alert('Заполните все обязательные поля!');
+          }
+      });
+  });
+
+  function confirmCancel() {
+      if (confirm('Вы уверены? Все несохранённые изменения будут потеряны.')) {
+          const form = document.querySelector('form');
+          const course = form.querySelector('[name="course"]').value;
+          const week = form.querySelector('[name="week"]').value;
+          const day = form.querySelector('[name="day"]').value;
+          window.location.href = `/schedule-editor/schedule?course=${course}&week=${week}&day=${day}`;
+      }
+  }
+
+  function confirmDelete() {
+      if (confirm('Вы уверены, что хотите удалить это занятие?')) {
+          const form = document.querySelector('form');
+          const id = form.querySelector('[name="id"]').value;
+          const course = form.querySelector('[name="course"]').value;
+          const week = form.querySelector('[name="week"]').value;
+          const day = form.querySelector('[name="day"]').value;
+
+          fetch(`/schedule/delete?id=${id}&course=${course}&week=${week}&day=${day}`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+              }
+          }).then(() => window.location.href = `/schedule-editor/schedule?course=${course}&week=${week}&day=${day}`);
+      }
+  }
+
+  let formChanged = false;
+  document.querySelectorAll('a.btn-secondary').forEach(el => {
+      el.addEventListener('change', () => formChanged = true);
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+      if (formChanged) {
+          e.preventDefault();
+          e.returnValue = '';
+      }
+  });
+</script>
+</body>
+</html>
